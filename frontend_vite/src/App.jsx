@@ -11,6 +11,10 @@ import ResourceManagement from './pages/ResourceManagement';
 import FundingApplication from './pages/FundingApplication';
 import MyApplications from './pages/MyApplications';
 import LaunchAnimation from './components/LaunchAnimation';
+import StartupDetails from './pages/StartupDetails';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Contact from './pages/Contact';
 import useAuthStore from './store/authStore';
 import tasavurLogo from './assets/logo.jpg';
 
@@ -221,7 +225,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="/startups/:id" element={<PlaceholderPage title="Startup Details" />} />
+          <Route path="/startups/:id" element={<StartupDetails />} />
           <Route
             path="/admin/*"
             element={
@@ -238,6 +242,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
@@ -554,9 +561,9 @@ const Home = () => {
               </div>
             </div>
             <div className="flex items-center gap-6 text-white/50 text-sm">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
             </div>
             <div className="text-white/40 text-sm">
               © 2024 Tasavur. All rights reserved.

@@ -19,6 +19,13 @@
   --color-text-muted: #525252;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
+  
+  /* Lavender Theme */
+  --color-lavender-bg: #C9B8E8;
+  --color-lavender-light: #E8DFF5;
+  --color-lavender-dark: #9B7FCB;
+  --color-bento-dark: #1a1a1a;
+  --color-bento-darker: #0f0f0f;
 }
 
 /* ============================================

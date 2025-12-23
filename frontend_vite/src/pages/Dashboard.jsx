@@ -13,7 +13,7 @@ import io from 'socket.io-client';
 
 /**
  * Dashboard Page
- * Main dashboard showing startups with filters, search, and pagination
+ * Role-based dashboard: Founders see their own data, Admins see all
  * Dark theme with glassmorphism effects
  */
 const Dashboard = () => {
@@ -21,6 +21,7 @@ const Dashboard = () => {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const [startups, setStartups] = useState([]);
+  const [myStartups, setMyStartups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -41,6 +42,10 @@ const Dashboard = () => {
   const [selectedStartup, setSelectedStartup] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
+  const isFounder = user?.role === 'founder';
+
   // Socket.IO for real-time updates
   useEffect(() => {
     const socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000');
@@ -59,7 +64,7 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Fetch startups
+  // Fetch startups based on role
   const fetchStartups = async () => {
     setLoading(true);
     try {
@@ -69,12 +74,24 @@ const Dashboard = () => {
         ...filters,
       };
 
+      // For founders, only fetch their own startups
+      if (isFounder && user?._id) {
+        params.founder = user._id;
+      }
+
       Object.keys(params).forEach((key) => {
         if (!params[key]) delete params[key];
       });
 
       const response = await startupAPI.getAll(params);
-      setStartups(response.data.data);
+      const fetchedStartups = response.data.data;
+
+      if (isAdmin) {
+        setStartups(fetchedStartups);
+      } else {
+        setMyStartups(fetchedStartups);
+      }
+
       setTotalPages(response.data.totalPages);
       setTotalCount(response.data.count);
     } catch (error) {
@@ -88,7 +105,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchStartups();
-  }, [currentPage, filters]);
+  }, [currentPage, filters, user]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -111,10 +128,11 @@ const Dashboard = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedStartups.length === startups.length) {
+    const currentStartups = isAdmin ? startups : myStartups;
+    if (selectedStartups.length === currentStartups.length) {
       setSelectedStartups([]);
     } else {
-      setSelectedStartups(startups.map((s) => s._id));
+      setSelectedStartups(currentStartups.map((s) => s._id));
     }
   };
 
@@ -138,6 +156,245 @@ const Dashboard = () => {
     navigate('/funding', { state: { startup: selectedStartup } });
   };
 
+  // Get display startups based on role
+  const displayStartups = isAdmin ? startups : myStartups;
+
+  // Calculate user stats
+  const userStats = {
+    totalStartups: myStartups.length,
+    activeStartups: myStartups.filter((s) => s.status === 'Active').length,
+    pendingStartups: myStartups.filter((s) => s.status === 'Pending').length,
+    totalRevenue: myStartups.reduce((sum, s) => sum + (s.kpis?.revenue || 0), 0),
+    totalUsers: myStartups.reduce((sum, s) => sum + (s.kpis?.users || 0), 0),
+    totalFunding: myStartups.reduce((sum, s) => sum + (s.kpis?.funding || 0), 0),
+  };
+
+  // Render User/Founder Dashboard
+  const renderUserDashboard = () => (
+    <>
+      {/* User Stats Overview */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-white mb-6">📊 Your Achievements</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <StatCard
+            title="My Startups"
+            value={userStats.totalStartups}
+            icon="🚀"
+            gradient="from-blue-500/20 to-blue-500/5"
+          />
+          <StatCard
+            title="Active"
+            value={userStats.activeStartups}
+            icon="✅"
+            gradient="from-green-500/20 to-green-500/5"
+          />
+          <StatCard
+            title="Pending"
+            value={userStats.pendingStartups}
+            icon="⏳"
+            gradient="from-yellow-500/20 to-yellow-500/5"
+          />
+          <StatCard
+            title="Total Revenue"
+            value={`$${(userStats.totalRevenue / 1000).toFixed(0)}k`}
+            icon="💰"
+            gradient="from-emerald-500/20 to-emerald-500/5"
+          />
+          <StatCard
+            title="Total Users"
+            value={userStats.totalUsers.toLocaleString()}
+            icon="👥"
+            gradient="from-purple-500/20 to-purple-500/5"
+          />
+          <StatCard
+            title="Funding Raised"
+            value={`$${(userStats.totalFunding / 1000).toFixed(0)}k`}
+            icon="📈"
+            gradient="from-pink-500/20 to-pink-500/5"
+          />
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-8 bg-white/5 rounded-2xl p-6 border border-white/10">
+        <h3 className="text-lg font-semibold text-white mb-4">🎯 Quick Actions</h3>
+        <div className="flex flex-wrap gap-4">
+          <button
+            onClick={() => navigate('/onboard')}
+            className="btn btn-primary"
+          >
+            + Register New Startup
+          </button>
+          <button
+            onClick={() => navigate('/mentor-request')}
+            className="btn btn-secondary"
+          >
+            🤝 Request Mentorship
+          </button>
+          <button
+            onClick={() => navigate('/funding')}
+            className="btn btn-secondary"
+          >
+            💰 Apply for Funding
+          </button>
+          <button
+            onClick={() => navigate('/resources')}
+            className="btn btn-secondary"
+          >
+            📚 Browse Resources
+          </button>
+        </div>
+      </div>
+
+      {/* My Startups */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white mb-2">🏢 My Startups</h2>
+        <p className="text-white/60 mb-6">Manage and track your startup ventures</p>
+      </div>
+
+      {/* Empty State for Founders */}
+      {!loading && myStartups.length === 0 && (
+        <div className="text-center py-20 bg-white/5 rounded-2xl border border-white/10">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/10 flex items-center justify-center">
+            <span className="text-5xl">🚀</span>
+          </div>
+          <h3 className="text-2xl font-semibold text-white mb-3">
+            No startups yet
+          </h3>
+          <p className="text-white/60 mb-8 max-w-md mx-auto">
+            Start your entrepreneurial journey by registering your first startup!
+          </p>
+          <button
+            onClick={() => navigate('/onboard')}
+            className="btn btn-primary text-lg px-8 py-3"
+          >
+            Register Your First Startup
+          </button>
+        </div>
+      )}
+
+      {/* Startups Grid for Founders */}
+      {!loading && myStartups.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {myStartups.map((startup, index) => (
+            <div
+              key={startup._id}
+              onClick={() => handleStartupClick(startup)}
+              className="cursor-pointer animate-fade-in-up"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <StartupCard
+                startup={startup}
+                showActions={true}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
+  // Render Admin Dashboard
+  const renderAdminDashboard = () => (
+    <>
+      {/* Admin Overview Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <StatCard
+          title="Total Startups"
+          value={totalCount}
+          icon="🚀"
+          gradient="from-blue-500/20 to-blue-500/5"
+        />
+        <StatCard
+          title="Active"
+          value={startups.filter((s) => s.status === 'Active').length}
+          icon="✅"
+          gradient="from-green-500/20 to-green-500/5"
+        />
+        <StatCard
+          title="Pending"
+          value={startups.filter((s) => s.status === 'Pending').length}
+          icon="⏳"
+          gradient="from-yellow-500/20 to-yellow-500/5"
+        />
+        <StatCard
+          title="This Page"
+          value={startups.length}
+          icon="📄"
+          gradient="from-purple-500/20 to-purple-500/5"
+        />
+      </div>
+
+      {/* Filter Bar */}
+      <FilterBar filters={filters} onFilterChange={handleFilterChange} />
+
+      {/* Admin Controls */}
+      {selectedStartups.length > 0 && (
+        <AdminControls
+          selectedCount={selectedStartups.length}
+          selectedStartups={selectedStartups}
+          onActionComplete={handleBulkActionComplete}
+          onSelectAll={handleSelectAll}
+          allSelected={selectedStartups.length === startups.length}
+        />
+      )}
+
+      {/* Startups Grid for Admin */}
+      {!loading && startups.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {startups.map((startup, index) => (
+              <div
+                key={startup._id}
+                onClick={() => handleStartupClick(startup)}
+                className="cursor-pointer animate-fade-in-up"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <StartupCard
+                  startup={startup}
+                  isSelected={selectedStartups.includes(startup._id)}
+                  onSelect={(e) => {
+                    e.stopPropagation();
+                    handleSelectStartup(startup._id);
+                  }}
+                  showActions={true}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
+
+      {/* Empty State for Admin */}
+      {!loading && startups.length === 0 && (
+        <div className="text-center py-32">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+            <span className="text-5xl">🔍</span>
+          </div>
+          <h3 className="text-2xl font-semibold text-white mb-3">
+            No startups found
+          </h3>
+          <p className="text-white/60 mb-8 max-w-md mx-auto">
+            Try adjusting your filters or search query to find what you're looking for
+          </p>
+          <button
+            onClick={() => handleFilterChange({ domain: '', stage: '', status: '', search: '' })}
+            className="btn btn-primary"
+          >
+            Clear Filters
+          </button>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Navigation Header */}
@@ -156,7 +413,7 @@ const Dashboard = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              {isAuthenticated && user?.role === 'founder' && (
+              {isAuthenticated && isFounder && (
                 <>
                   <button
                     onClick={() => navigate('/my-applications')}
@@ -171,6 +428,11 @@ const Dashboard = () => {
                     + Add Startup
                   </button>
                 </>
+              )}
+              {isAuthenticated && isAdmin && (
+                <span className="px-3 py-1 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs font-bold rounded-full">
+                  ADMIN
+                </span>
               )}
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
@@ -214,10 +476,14 @@ const Dashboard = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-white font-display">
-                Dashboard
+                {isAdmin ? '🔧 Admin Dashboard' : '🏠 My Dashboard'}
               </h1>
               <p className="text-white/60 mt-2 text-lg">
-                {isAuthenticated ? `Welcome back, ${user?.name}!` : 'Explore startups in our incubator'}
+                {isAuthenticated
+                  ? isAdmin
+                    ? 'Manage all startups and users'
+                    : `Welcome back, ${user?.name}! Here's your startup overview`
+                  : 'Explore startups in our incubator'}
               </p>
             </div>
           </div>
@@ -225,48 +491,6 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <StatCard
-            title="Total Startups"
-            value={totalCount}
-            icon="🚀"
-            gradient="from-blue-500/20 to-blue-500/5"
-          />
-          <StatCard
-            title="Active"
-            value={startups.filter((s) => s.status === 'Active').length}
-            icon="✅"
-            gradient="from-green-500/20 to-green-500/5"
-          />
-          <StatCard
-            title="Pending"
-            value={startups.filter((s) => s.status === 'Pending').length}
-            icon="⏳"
-            gradient="from-yellow-500/20 to-yellow-500/5"
-          />
-          <StatCard
-            title="This Page"
-            value={startups.length}
-            icon="📄"
-            gradient="from-purple-500/20 to-purple-500/5"
-          />
-        </div>
-
-        {/* Filter Bar */}
-        <FilterBar filters={filters} onFilterChange={handleFilterChange} />
-
-        {/* Admin Controls */}
-        {user?.role === 'admin' && selectedStartups.length > 0 && (
-          <AdminControls
-            selectedCount={selectedStartups.length}
-            selectedStartups={selectedStartups}
-            onActionComplete={handleBulkActionComplete}
-            onSelectAll={handleSelectAll}
-            allSelected={selectedStartups.length === startups.length}
-          />
-        )}
-
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-32">
@@ -274,63 +498,8 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Startups Grid */}
-        {!loading && startups.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {startups.map((startup, index) => (
-                <div
-                  key={startup._id}
-                  onClick={() => handleStartupClick(startup)}
-                  className="cursor-pointer animate-fade-in-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <StartupCard
-                    startup={startup}
-                    isSelected={selectedStartups.includes(startup._id)}
-                    onSelect={
-                      user?.role === 'admin'
-                        ? (e) => {
-                          e.stopPropagation();
-                          handleSelectStartup(startup._id);
-                        }
-                        : null
-                    }
-                    showActions={isAuthenticated}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </>
-        )}
-
-        {/* Empty State */}
-        {!loading && startups.length === 0 && (
-          <div className="text-center py-32">
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
-              <span className="text-5xl">🔍</span>
-            </div>
-            <h3 className="text-2xl font-semibold text-white mb-3">
-              No startups found
-            </h3>
-            <p className="text-white/60 mb-8 max-w-md mx-auto">
-              Try adjusting your filters or search query to find what you're looking for
-            </p>
-            <button
-              onClick={() => handleFilterChange({ domain: '', stage: '', status: '', search: '' })}
-              className="btn btn-primary"
-            >
-              Clear Filters
-            </button>
-          </div>
-        )}
+        {/* Role-based Dashboard Content */}
+        {!loading && (isAdmin ? renderAdminDashboard() : renderUserDashboard())}
 
         {/* Startup Detail Modal */}
         <Transition appear show={showDetailModal} as={Fragment}>
@@ -459,19 +628,30 @@ const Dashboard = () => {
                             </div>
                           )}
 
-                          <div className="flex justify-end space-x-3 pt-6 border-t border-white/10">
+                          <div className="flex justify-between pt-6 border-t border-white/10">
                             <button
-                              onClick={handleRequestMentor}
-                              className="btn btn-secondary"
+                              onClick={() => {
+                                setShowDetailModal(false);
+                                navigate(`/startups/${selectedStartup._id}`);
+                              }}
+                              className="btn btn-ghost"
                             >
-                              Request Mentor
+                              View Full Details
                             </button>
-                            <button
-                              onClick={handleApplyFunding}
-                              className="btn btn-primary"
-                            >
-                              Apply for Funding
-                            </button>
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={handleRequestMentor}
+                                className="btn btn-secondary"
+                              >
+                                Request Mentor
+                              </button>
+                              <button
+                                onClick={handleApplyFunding}
+                                className="btn btn-primary"
+                              >
+                                Apply for Funding
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </>
@@ -497,9 +677,9 @@ const StatCard = ({ title, value, icon, gradient }) => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-white/50 mb-1">{title}</p>
-          <p className="text-3xl md:text-4xl font-bold text-white">{value}</p>
+          <p className="text-2xl md:text-3xl font-bold text-white">{value}</p>
         </div>
-        <div className={`text-4xl w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+        <div className={`text-3xl w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform`}>
           {icon}
         </div>
       </div>

@@ -208,6 +208,38 @@ npm run dev
 
 Frontend will run on http://localhost:5173
 
+### 4. Seed Admin Account
+
+```bash
+cd backend
+
+# Create default admin account
+node seeders/adminSeeder.js
+```
+
+## 🔐 Default Credentials
+
+### Admin Account
+
+| Field | Value |
+|-------|-------|
+| **Email** | `admin@tasavur.com` |
+| **Password** | `Admin@123` |
+| **Role** | `admin` |
+
+### Test User Account
+
+| Field | Value |
+|-------|-------|
+| **Email** | `user@tasavur.com` |
+| **Password** | `User@123` |
+| **Role** | `founder` |
+
+> **Security Note:** 
+> - Change these default passwords after first login in production environments
+> - These credentials are for development and testing purposes only
+> - Never commit real credentials to version control
+
 ## 🔐 Environment Variables
 
 ### Backend (.env)
