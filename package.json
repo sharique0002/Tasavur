@@ -1,0 +1,12 @@
+{
+  "name": "tasavur",
+  "version": "1.0.0",
+  "description": "Business Incubator Platform",
+  "scripts": {
+    "build": "cd frontend_vite && npm install && npm run build",
+    "vercel-build": "cd frontend_vite && npm install && npm run build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
