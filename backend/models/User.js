@@ -70,6 +70,10 @@ const userSchema = new mongoose.Schema(
 
     refreshTokens: {
       type: [{
+        // Unique identifier for the refresh token (JWT ID)
+        jti: {
+          type: String,
+        },
         token: {
           type: String,
           required: true,
@@ -257,6 +261,8 @@ userSchema.methods.generateRefreshToken = function () {
   const payload = {
     id: this._id,
     type: 'refresh',
+    // Add unique JWT ID to ensure tokens are distinct even within same second
+    jti: crypto.randomBytes(8).toString('hex'),
   };
 
   return jwt.sign(
@@ -275,7 +281,19 @@ userSchema.methods.addRefreshToken = async function (token, metadata = {}) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
 
+  // Attempt to extract JWT ID (jti) from the token for uniqueness
+  let jti;
+  try {
+    const decoded = jwt.decode(token);
+    if (decoded && typeof decoded.jti === 'string') {
+      jti = decoded.jti;
+    }
+  } catch (e) {
+    // If decode fails, continue without jti
+  }
+
   this.refreshTokens.push({
+    jti,
     token,
     expiresAt,
     userAgent: metadata.userAgent,

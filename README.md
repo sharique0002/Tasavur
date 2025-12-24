@@ -1,4 +1,4 @@
-# 🚀 Business Incubator Platform
+# 🚀 Tasavur - Business Incubator Platform
 
 A full-stack MERN (MongoDB, Express, React, Node.js) platform for managing startup incubation programs with AI-powered mentor matching, real-time dashboards, and comprehensive resource management.
 
@@ -67,7 +67,6 @@ A full-stack MERN (MongoDB, Express, React, Node.js) platform for managing start
 - **bcrypt** - Password hashing
 - **Multer** - File uploads
 - **Socket.IO** - Real-time updates
-- **Nodemailer** - Email notifications
 - **OpenAI API** - AI-powered matching (optional)
 
 ### Frontend
@@ -90,7 +89,7 @@ A full-stack MERN (MongoDB, Express, React, Node.js) platform for managing start
 ## 📁 Project Structure
 
 ```
-Business Incubator Platform/
+Tasavur/
 ├── backend/
 │   ├── config/
 │   │   └── db.js                 # MongoDB connection
@@ -101,41 +100,64 @@ Business Incubator Platform/
 │   │   ├── User.js               # User model
 │   │   ├── Startup.js            # Startup model
 │   │   ├── Mentor.js             # Mentor model
-│   │   └── MentorshipRequest.js  # Mentorship request model
+│   │   ├── MentorshipRequest.js  # Mentorship request model
+│   │   ├── FundingApplication.js # Funding application model
+│   │   ├── Resource.js           # Resource model
+│   │   └── Notification.js       # Notification model
 │   ├── routes/
-│   │   ├── auth.js               # Authentication routes
+│   │   ├── auth.js               # Authentication routes (with refresh tokens)
 │   │   ├── startup.js            # Startup CRUD routes
 │   │   ├── dashboard.js          # Dashboard API
-│   │   └── mentorship.js         # Mentorship routes
+│   │   ├── mentorship.js         # Mentorship routes
+│   │   ├── funding.js            # Funding routes
+│   │   └── resource.js           # Resource routes
 │   ├── services/
 │   │   └── matchingService.js    # AI matching algorithm
+│   ├── seeders/
+│   │   └── adminSeeder.js        # Seed admin account
+│   ├── utils/
+│   │   ├── errorHandler.js       # Error handling utilities
+│   │   └── sanitizer.js          # Input sanitization
 │   ├── tests/
 │   │   ├── auth.test.js
-│   │   └── startup.test.js
+│   │   ├── startup.test.js
+│   │   ├── resource.test.js
+│   │   └── e2e_flow.test.js
+│   ├── uploads/                  # Local file uploads
 │   ├── server.js                 # Express app entry
 │   ├── package.json
 │   ├── Dockerfile
 │   └── .env.example
-├── frontend/
+├── frontend_vite/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── StartupCard.jsx
 │   │   │   ├── FilterBar.jsx
 │   │   │   ├── Pagination.jsx
-│   │   │   └── AdminControls.jsx
+│   │   │   ├── AdminControls.jsx
+│   │   │   ├── ResourceCard.jsx
+│   │   │   └── LaunchAnimation.jsx
 │   │   ├── pages/
-│   │   │   ├── Onboard.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── MentorRequest.jsx
-│   │   │   └── MyRequests.jsx
+│   │   │   ├── Onboard.jsx       # Startup registration
+│   │   │   ├── Dashboard.jsx     # Main dashboard
+│   │   │   ├── MentorRequest.jsx # Request mentorship
+│   │   │   ├── MyRequests.jsx    # View my requests
+│   │   │   ├── ResourceHub.jsx   # Browse resources
+│   │   │   ├── ResourceManagement.jsx
+│   │   │   ├── FundingApplication.jsx
+│   │   │   ├── MyApplications.jsx
+│   │   │   ├── StartupDetails.jsx
+│   │   │   ├── Contact.jsx
+│   │   │   ├── Privacy.jsx
+│   │   │   └── Terms.jsx
 │   │   ├── services/
 │   │   │   └── api.js            # Axios configuration
 │   │   ├── store/
 │   │   │   └── authStore.js      # Zustand auth store
+│   │   ├── assets/               # Static assets
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
-│   ├── public/
 │   ├── index.html
 │   ├── package.json
 │   ├── vite.config.js
@@ -146,7 +168,8 @@ Business Incubator Platform/
 │   └── workflows/
 │       └── ci-cd.yml             # GitHub Actions CI/CD
 ├── docker-compose.yml
-├── .env.docker.example
+├── start-servers.bat             # Windows dev startup script
+├── SECURITY.md
 └── README.md
 ```
 
@@ -194,7 +217,7 @@ Backend will run on http://localhost:5000
 #### 3. Frontend Setup
 
 ```bash
-cd frontend
+cd frontend_vite
 
 # Install dependencies
 npm install
@@ -255,7 +278,9 @@ MONGODB_URI=mongodb://localhost:27017/business-incubator
 
 # JWT
 JWT_SECRET=your_super_secret_jwt_key_change_in_production
-JWT_EXPIRE=7d
+JWT_REFRESH_SECRET=your_refresh_token_secret_change_in_production
+JWT_EXPIRE=15m
+JWT_REFRESH_EXPIRE=30d
 
 # AWS S3 (Optional - for file uploads)
 AWS_ACCESS_KEY_ID=your_aws_access_key
@@ -265,12 +290,6 @@ AWS_S3_BUCKET=incubator-uploads
 
 # OpenAI API (Optional - for AI matching)
 OPENAI_API_KEY=your_openai_api_key
-
-# Email (Optional - for notifications)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_app_password
 
 # Frontend URL (for CORS)
 FRONTEND_URL=http://localhost:5173
@@ -287,10 +306,8 @@ VITE_API_URL=http://localhost:5000/api
 ### Quick Start with Docker Compose
 
 ```bash
-# Copy environment file
-cp .env.docker.example .env
-
-# Edit .env with your values
+# Create environment files in backend and frontend_vite folders
+# Edit .env files with your configuration
 
 # Build and start all services
 docker-compose up -d
@@ -318,7 +335,7 @@ docker run -p 5000:5000 --env-file .env incubator-backend
 
 #### Build Frontend
 ```bash
-cd frontend
+cd frontend_vite
 docker build -t incubator-frontend .
 docker run -p 3000:80 incubator-frontend
 ```
@@ -340,6 +357,16 @@ Content-Type: application/json
 }
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "token": "eyJhbGc...",
+  "refreshToken": "eyJhbGc...",
+  "user": { "id": "...", "name": "John Doe", "email": "john@example.com", "role": "founder" }
+}
+```
+
 #### Login
 ```http
 POST /api/auth/login
@@ -348,6 +375,27 @@ Content-Type: application/json
 {
   "email": "john@example.com",
   "password": "password123"
+}
+```
+
+#### Refresh Token
+```http
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGc..."
+}
+```
+
+#### Logout
+```http
+POST /api/auth/logout
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "refreshToken": "eyJhbGc..."
 }
 ```
 
@@ -498,7 +546,7 @@ npm test -- --coverage    # With coverage
 ### Run Frontend Tests
 
 ```bash
-cd frontend
+cd frontend_vite
 npm test
 ```
 
@@ -587,7 +635,6 @@ docker-compose up -d
 - **Azure**: App Service, Container Instances
 - **DigitalOcean**: App Platform, Droplets
 - **Heroku**: Containers or buildpacks
-- **Vercel/Netlify**: Frontend only
 - **Railway**: Full-stack deployment
 
 ### Option 3: Traditional Hosting
