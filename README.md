@@ -1,5 +1,8 @@
 # 🚀 Tasavur - Business Incubator Platform
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sharique0002/Tasavur)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge)](https://tasavur.vercel.app)
+
 A full-stack MERN (MongoDB, Express, React, Node.js) platform for managing startup incubation programs with AI-powered mentor matching, real-time dashboards, and comprehensive resource management.
 
 ![Tech Stack](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
