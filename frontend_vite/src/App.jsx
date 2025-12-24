@@ -259,6 +259,13 @@ function App() {
 const Navigation = ({ isScrolled }) => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const handleLogout = async () => {
+    await logout();
+    // Redirect to home page after logout
+    window.location.href = '/';
+  };
 
   return (
     <nav
@@ -289,7 +296,7 @@ const Navigation = ({ isScrolled }) => {
               <div className="flex items-center space-x-4">
                 <span className="text-white/60 text-sm">{user?.name}</span>
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="btn btn-secondary text-sm py-2"
                 >
                   Logout
