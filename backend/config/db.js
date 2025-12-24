@@ -34,8 +34,9 @@ const connectDB = async () => {
   // Mongoose connection options
   const options = {
     maxPoolSize: 10, // Maximum connection pool size
-    serverSelectionTimeoutMS: 5000, // Timeout for server selection
+    serverSelectionTimeoutMS: 30000, // Timeout for server selection (30s for cold start)
     socketTimeoutMS: 45000, // Timeout for socket operations
+    connectTimeoutMS: 30000, // Connection timeout (30s)
     family: 4, // Use IPv4        
   };
 
