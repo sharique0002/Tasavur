@@ -77,14 +77,13 @@ app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
 }));
 
-// CORS configuration - allow multiple development ports
+// CORS configuration - allow multiple origins for development and production
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
+  'http://localhost:5173',
   'http://localhost:3000',
-  'http://127.0.0.1:5173',
-];
+  process.env.FRONTEND_URL,
+  'https://tasavur.vercel.app', // Add your Vercel domain
+].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -93,7 +92,13 @@ app.use(cors({
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    // In development, allow all origins
+    if (process.env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
+    // In production, check allowed origins
+    if (allowedOrigins.includes(origin) || allowedOrigins.some(allowed => origin?.startsWith(allowed))) {
       callback(null, true);
     } else {
       console.warn(`⚠️ CORS blocked request from: ${origin}`);

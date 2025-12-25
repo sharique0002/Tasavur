@@ -2,6 +2,17 @@
   "name": "tasavur",
   "version": "1.0.0",
   "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend_vite && npm run dev",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend_vite && npm run preview",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend_vite && npm install",
+    "build": "cd frontend_vite && npm run build",
     "vercel-build": "cd frontend_vite && npm install && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
