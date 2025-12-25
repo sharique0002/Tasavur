@@ -85,6 +85,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://tasavur-lbcm.vercel.app', // Vercel deployment
   'https://tasavur.vercel.app',
+  '*'
 ].filter(Boolean);
 
 app.use(cors({
