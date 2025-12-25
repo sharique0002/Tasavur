@@ -5,12 +5,11 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend_vite && npm run dev",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "cd backend && npm start",
-    "start:frontend": "cd frontend_vite && npm run preview",
+    "start": "cd backend && npm start",
+    "start:prod": "cd backend && NODE_ENV=production node server.js",
     "install:all": "npm install && cd backend && npm install && cd ../frontend_vite && npm install",
-    "build": "cd frontend_vite && npm run build",
-    "vercel-build": "cd frontend_vite && npm install && npm run build"
+    "build": "cd frontend_vite && npm install && npm run build",
+    "build:full": "npm run build && cd backend && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

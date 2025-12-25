@@ -79,16 +79,16 @@ app.use(helmet({
 
 // CORS configuration - allow multiple origins for development and production
 const allowedOrigins = [
-  'http://localhost:5173',
+  'http://localhost:5173', // Local development frontend
   'http://localhost:3000',
+  'http://localhost:5000', // Same-origin when served together
   process.env.FRONTEND_URL,
-  'https://tasavur-lbcm.vercel.app', // Vercel production URL
-  'https://tasavur.vercel.app', // Alternative Vercel domain
+  'https://tasavur-lbcm.onrender.com', // Render deployment (same origin)
 ].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, curl)
+    // Allow requests with no origin (mobile apps, Postman, curl, same-origin)
     if (!origin) {
       return callback(null, true);
     }
@@ -98,7 +98,15 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // In production, check allowed origins
+    // In production, check allowed origins or allow same-origin
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
     if (allowedOrigins.includes(origin) || allowedOrigins.some(allowed => origin?.startsWith(allowed))) {
       callback(null, true);
     } else {
@@ -160,6 +168,15 @@ if (process.env.NODE_ENV === 'development') {
 // Serve static files (for local uploads)
 app.use('/uploads', express.static('uploads'));
 
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  const frontendPath = path.join(__dirname, '../frontend_vite/dist');
+  
+  app.use(express.static(frontendPath));
+  console.log('📦 Serving frontend from:', frontendPath);
+}
+
 // =============================================================================
 // ROUTES
 // =============================================================================
@@ -191,6 +208,18 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/mentorship', require('./routes/mentorship'));
 app.use('/api/resources', require('./routes/resource'));
 app.use('/api/funding', require('./routes/funding'));
+
+// Serve frontend index.html for all non-API routes (SPA support)
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ success: false, message: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(__dirname, '../frontend_vite/dist/index.html'));
+  });
+}
 
 // =============================================================================
 // ERROR HANDLING

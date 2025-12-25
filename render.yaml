@@ -1,12 +1,11 @@
 services:
   - type: web
-    name: tasavur-backend
+    name: tasavur-fullstack
     env: node
     region: oregon
     plan: free
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: npm install && cd frontend_vite && npm install && npm run build && cd ../backend && npm install
+    startCommand: cd backend && node server.js
     envVars:
       - key: NODE_ENV
         value: production
