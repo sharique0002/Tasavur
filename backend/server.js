@@ -158,13 +158,14 @@ if (process.env.NODE_ENV === 'development') {
 // Serve static files (for local uploads)
 app.use('/uploads', express.static('uploads'));
 
-// Serve frontend static files in production
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
-  const frontendPath = path.join(__dirname, '../frontend_vite/dist');
-  
-  app.use(express.static(frontendPath));
-  console.log('📦 Serving frontend from:', frontendPath);
+// Serve frontend static files if build exists
+const path = require('path');
+const fs = require('fs');
+const frontendDistPath = path.join(__dirname, '../frontend_vite/dist');
+
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+  console.log('📦 Serving frontend from:', frontendDistPath);
 }
 
 // =============================================================================
@@ -201,9 +202,11 @@ app.use('/api/funding', require('./routes/funding'));
 
 // Root route - serve frontend
 app.get('/', (req, res) => {
-  if (process.env.NODE_ENV === 'production') {
-    const path = require('path');
-    res.sendFile(path.join(__dirname, '../frontend_vite/dist/index.html'));
+  const frontendPath = path.join(__dirname, '../frontend_vite/dist/index.html');
+  
+  // Check if frontend build exists
+  if (fs.existsSync(frontendPath)) {
+    res.sendFile(frontendPath);
   } else {
     res.json({
       success: true,
@@ -224,14 +227,15 @@ app.get('/', (req, res) => {
 });
 
 // Serve frontend index.html for all non-API routes (SPA support)
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
+const frontendPath = path.join(__dirname, '../frontend_vite/dist/index.html');
+
+if (fs.existsSync(frontendPath)) {
   app.get('*', (req, res) => {
     // Skip API routes
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ success: false, message: 'API endpoint not found' });
     }
-    res.sendFile(path.join(__dirname, '../frontend_vite/dist/index.html'));
+    res.sendFile(frontendPath);
   });
 }
 
