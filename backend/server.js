@@ -17,6 +17,10 @@ const { sanitizeMiddleware } = require('./utils/sanitizer');
 
 // Initialize Express app
 const app = express();
+
+// Trust proxy for rate limiting (needed for Render deployment)
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 
 // Initialize Socket.IO for real-time updates
