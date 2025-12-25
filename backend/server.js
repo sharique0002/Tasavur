@@ -108,17 +108,6 @@ app.use(cors({
   },
   credentials: true,
 }));
-    if (allowedOrigins.includes(origin) || allowedOrigins.some(allowed => origin?.startsWith(allowed))) {
-      callback(null, true);
-    } else {
-      console.warn(`⚠️ CORS blocked request from: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
 
 // Rate limiting - protect against brute force attacks
 const limiter = rateLimit({
