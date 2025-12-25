@@ -120,8 +120,13 @@ app.use(cors({
       return callback(null, true);
     }
 
+    // Allow all Vercel preview/production URLs
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+
     // In development, allow all origins
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
 
