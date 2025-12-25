@@ -1,0 +1,17 @@
+node_modules
+.env.local
+.env.development
+*.log
+.DS_Store
+backend/uploads/*
+frontend_vite/node_modules
+backend/node_modules
+.git
+*.test.js
+tests/
+__tests__/
+coverage/
+.vscode/
+render.yaml
+DEPLOYMENT_STATUS.md
+VERCEL_DEPLOYMENT.md

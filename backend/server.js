@@ -83,7 +83,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000', // Same-origin when served together
   process.env.FRONTEND_URL,
-  'https://tasavur-lbcm.onrender.com', // Render deployment (same origin)
+  'https://tasavur-lbcm.vercel.app', // Vercel deployment
+  'https://tasavur.vercel.app',
 ].filter(Boolean);
 
 app.use(cors({
@@ -98,8 +99,8 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // In production, check allowed origins or allow same-origin
-    if (allowedOrigins.includes(origin)) {
+    // In production, check allowed origins or allow *.vercel.app domains
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       return callback(null, true);
     }
 
@@ -279,8 +280,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Start server (skip in test environment - tests manage this themselves)
-if (process.env.NODE_ENV !== 'test') {
+// Start server (skip in test environment and Vercel serverless)
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   server.listen(PORT, () => {
     console.log('='.repeat(60));
     console.log(`🚀 Business Incubator Platform Server`);
