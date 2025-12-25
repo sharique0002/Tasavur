@@ -4,18 +4,21 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
       - key: MONGODB_URI
-        sync: false
+        value: mongodb+srv://Sharique:Sharique022@cluster0.ugjk9bj.mongodb.net/business-incubator?retryWrites=true&w=majority&appName=Cluster0
       - key: JWT_SECRET
-        generateValue: true
+        value: your_super_secret_jwt_key_change_this_in_production_min_32_chars
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        value: your_super_secret_refresh_token_key_change_this_in_production
+      - key: JWT_EXPIRE
+        value: 15m
       - key: FRONTEND_URL
         value: https://tasavur.vercel.app

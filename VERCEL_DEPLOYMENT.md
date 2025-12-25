@@ -7,6 +7,16 @@
 Since Vercel is optimized for frontend, deploy your backend separately:
 
 #### Option A: Deploy Backend to Render.com (Recommended)
+
+**Method 1: Using render.yaml (Automatic)**
+1. Go to [render.com](https://render.com) and sign up
+2. Click "New +" → "Blueprint"
+3. Connect your GitHub repository: `https://github.com/sharique0002/Tasavur`
+4. Render will detect `render.yaml` and configure automatically
+5. Click "Apply" to deploy
+6. Copy your backend URL (e.g., `https://tasavur-backend.onrender.com`)
+
+**Method 2: Manual Setup**
 1. Go to [render.com](https://render.com) and sign up
 2. Click "New +" → "Web Service"
 3. Connect your GitHub repository
@@ -14,7 +24,7 @@ Since Vercel is optimized for frontend, deploy your backend separately:
    - **Name**: tasavur-backend
    - **Root Directory**: `backend`
    - **Build Command**: `npm install`
-   - **Start Command**: `npm start` or `node server.js`
+   - **Start Command**: `node server.js`
    - **Environment Variables**:
      ```
      NODE_ENV=production
