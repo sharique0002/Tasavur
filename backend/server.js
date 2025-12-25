@@ -15,6 +15,34 @@ const { sanitizeMiddleware } = require('./utils/sanitizer');
  * Handles Express app initialization, middleware, routes, and Socket.IO
  */
 
+// =============================================================================
+// ENVIRONMENT VALIDATION
+// =============================================================================
+
+const validateEnv = () => {
+  const required = ['MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+  const missing = required.filter(key => !process.env[key]);
+
+  if (missing.length > 0 && process.env.NODE_ENV !== 'test') {
+    console.error('❌ Missing required environment variables:');
+    missing.forEach(key => console.error(`   - ${key}`));
+    console.error('\n📋 Please check your .env file or environment configuration.');
+    process.exit(1);
+  }
+
+  // Warn about optional but recommended vars in production
+  if (process.env.NODE_ENV === 'production') {
+    const recommended = ['FRONTEND_URL'];
+    const missingRecommended = recommended.filter(key => !process.env[key]);
+    if (missingRecommended.length > 0) {
+      console.warn('⚠️  Missing recommended environment variables for production:');
+      missingRecommended.forEach(key => console.warn(`   - ${key}`));
+    }
+  }
+};
+
+validateEnv();
+
 // Initialize Express app
 const app = express();
 const server = http.createServer(app);
@@ -22,7 +50,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO for real-time updates
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'https://tasavur-lbcm.vercel.app', process.env.FRONTEND_URL].filter(Boolean),
+    origin: ['http://localhost:5173', 'http://localhost:3000', process.env.FRONTEND_URL].filter(Boolean),
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -83,8 +111,6 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000', // Same-origin when served together
   process.env.FRONTEND_URL,
-  'https://tasavur-lbcm.vercel.app', // Vercel deployment
-  'https://tasavur.vercel.app',
 ].filter(Boolean);
 
 app.use(cors({
@@ -99,21 +125,13 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // In production, check allowed origins or allow *.vercel.app domains
-    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    // In production, check allowed origins
+    if (allowedOrigins.includes(origin) || allowedOrigins.some(allowed => origin?.startsWith(allowed))) {
       return callback(null, true);
     }
 
+    console.warn(`⚠️ CORS blocked request from: ${origin}`);
     callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-}));
-    if (allowedOrigins.includes(origin) || allowedOrigins.some(allowed => origin?.startsWith(allowed))) {
-      callback(null, true);
-    } else {
-      console.warn(`⚠️ CORS blocked request from: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -173,7 +191,7 @@ app.use('/uploads', express.static('uploads'));
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
   const frontendPath = path.join(__dirname, '../frontend_vite/dist');
-  
+
   app.use(express.static(frontendPath));
   console.log('📦 Serving frontend from:', frontendPath);
 }
@@ -280,8 +298,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-// Start server (skip in test environment and Vercel serverless)
-if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
+// Start server (skip in test environment)
+if (process.env.NODE_ENV !== 'test') {
   server.listen(PORT, () => {
     console.log('='.repeat(60));
     console.log(`🚀 Business Incubator Platform Server`);

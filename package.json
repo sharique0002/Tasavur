@@ -9,8 +9,7 @@
     "start:prod": "cd backend && NODE_ENV=production node server.js",
     "install:all": "npm install && cd backend && npm install && cd ../frontend_vite && npm install",
     "build": "cd frontend_vite && npm install && npm run build",
-    "build:full": "npm run build && cd backend && npm install",
-    "vercel-build": "cd backend && npm install && cd ../frontend_vite && npm install && npm run build"
+    "build:full": "npm run build && cd backend && npm install"
   },
   "dependencies": {},
   "devDependencies": {

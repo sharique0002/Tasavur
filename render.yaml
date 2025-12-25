@@ -1,23 +1,26 @@
 services:
+  # Backend API - Express + Socket.IO
   - type: web
-    name: tasavur-fullstack
+    name: tasavur-api
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install && cd frontend_vite && npm install && npm run build && cd ../backend && npm install
-    startCommand: cd backend && node server.js
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 5000
+        value: 10000
       - key: MONGODB_URI
-        value: mongodb+srv://Sharique:Sharique022@cluster0.ugjk9bj.mongodb.net/business-incubator?retryWrites=true&w=majority&appName=Cluster0
+        sync: false  # Set this in Render dashboard
       - key: JWT_SECRET
-        value: your_super_secret_jwt_key_change_this_in_production_min_32_chars
+        generateValue: true
       - key: JWT_REFRESH_SECRET
-        value: your_super_secret_refresh_token_key_change_this_in_production
+        generateValue: true
       - key: JWT_EXPIRE
         value: 15m
       - key: FRONTEND_URL
-        value: https://tasavur.vercel.app
+        sync: false  # Set to your Vercel URL after frontend deployment

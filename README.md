@@ -1,8 +1,5 @@
 # 🚀 Tasavur - Business Incubator Platform
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/sharique0002/Tasavur)
-[![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge)](https://tasavur.vercel.app)
-
 A full-stack MERN (MongoDB, Express, React, Node.js) platform for managing startup incubation programs with AI-powered mentor matching, real-time dashboards, and comprehensive resource management.
 
 ![Tech Stack](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
@@ -625,24 +622,44 @@ AI-powered matching system featuring:
 - Database connection pooling
 - React component memoization
 
-## 🚀 Deployment Options
+## 🚀 Deployment
 
-### Option 1: Docker Compose (Recommended)
+### Frontend → Vercel (Recommended)
+
+1. **Push to GitHub** and import project to [Vercel](https://vercel.com)
+2. **Set root directory** to `frontend_vite`
+3. **Add environment variables:**
+   ```
+   VITE_API_URL=https://your-backend.onrender.com/api
+   VITE_SOCKET_URL=https://your-backend.onrender.com
+   ```
+4. **Deploy** - Vercel auto-detects Vite
+
+### Backend → Render
+
+1. **Create Web Service** at [Render](https://render.com)
+2. **Connect GitHub repo**
+3. **Configure:**
+   - Root Directory: `backend`
+   - Build Command: `npm install`
+   - Start Command: `node server.js`
+4. **Add environment variables:**
+   ```
+   NODE_ENV=production
+   MONGODB_URI=mongodb+srv://...
+   JWT_SECRET=<generate 32+ char random string>
+   JWT_REFRESH_SECRET=<generate 32+ char random string>
+   FRONTEND_URL=https://your-app.vercel.app
+   ```
+5. **Deploy** and copy the URL
+6. **Update Vercel** `VITE_API_URL` with Render URL
+
+### Quick Deploy with render.yaml
+
 ```bash
-docker-compose up -d
+# Uses render.yaml for automatic configuration
+# Just connect your GitHub repo to Render
 ```
-
-### Option 2: Cloud Platforms
-- **AWS**: ECS, EC2, Lambda
-- **Azure**: App Service, Container Instances
-- **DigitalOcean**: App Platform, Droplets
-- **Heroku**: Containers or buildpacks
-- **Railway**: Full-stack deployment
-
-### Option 3: Traditional Hosting
-1. Deploy MongoDB (Atlas or self-hosted)
-2. Deploy backend on Node.js server
-3. Build and deploy frontend on static host
 
 ## 🤝 Contributing
 
