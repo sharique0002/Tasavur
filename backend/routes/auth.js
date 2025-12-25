@@ -224,8 +224,28 @@ router.post(
       // Reset login attempts on successful login
       await user.resetLoginAttempts();
 
-      // Generate token
+      // Generate access token
       const token = generateToken(user);
+
+      // Generate refresh token (with longer expiration)
+      const refreshToken = jwt.sign(
+        {
+          id: user._id,
+          email: user.email,
+        },
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+        {
+          expiresIn: '7d',
+        }
+      );
+
+      // Set refresh token in httpOnly cookie
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
 
       res.status(200).json({
         success: true,
@@ -521,19 +541,16 @@ router.post('/refresh', async (req, res) => {
 /**
  * @route   POST /api/auth/logout
  * @desc    Logout user (clear refresh token if using)
- * @access  Protected
+ * @access  Public (no authentication required)
  */
-router.post('/logout', protect, async (req, res) => {
+router.post('/logout', async (req, res) => {
   try {
-    // If using refresh tokens, remove the current one
-    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-
-    if (refreshToken) {
-      await req.user.removeRefreshToken(refreshToken);
-    }
-
-    // Clear cookie if set
-    res.clearCookie('refreshToken');
+    // Clear refresh token cookie if present
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+    });
 
     res.status(200).json({
       success: true,

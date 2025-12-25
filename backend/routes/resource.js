@@ -141,7 +141,7 @@ router.get(
   optionalAuth,
   [
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
-    query('limit').optional().isInt({ min: 1, max: 50 }).withMessage('Limit must be 1-50'),
+    query('limit').optional().isInt({ min: 1, max: 200 }).withMessage('Limit must be 1-200'),
     query('type').optional().isString(),
     query('tag').optional().isString(),
     query('search').optional().isString(),

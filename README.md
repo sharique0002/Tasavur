@@ -234,37 +234,35 @@ npm run dev
 
 Frontend will run on http://localhost:5173
 
-### 4. Seed Admin Account
+### 4. Seed Database with Test Accounts
 
 ```bash
 cd backend
 
 # Create default admin account
 node seeders/adminSeeder.js
+
+# Create test user accounts (founder, mentor, investor)
+node seeders/testUserSeeder.js
 ```
 
 ## 🔐 Default Credentials
 
-### Admin Account
+### Test Accounts (Development Only)
 
-| Field | Value |
-|-------|-------|
-| **Email** | `admin@tasavur.com` |
-| **Password** | `Admin@123` |
-| **Role** | `admin` |
-
-### Test User Account
-
-| Field | Value |
-|-------|-------|
-| **Email** | `user@tasavur.com` |
-| **Password** | `User@123` |
-| **Role** | `founder` |
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | `admin@tasavur.com` | `Admin@123` |
+| **Founder** | `user@tasavur.com` | `User@123` |
+| **Mentor** | `mentor@tasavur.com` | `Mentor@123` |
+| **Investor** | `investor@tasavur.com` | `Investor@123` |
 
 > **Security Note:** 
 > - Change these default passwords after first login in production environments
 > - These credentials are for development and testing purposes only
 > - Never commit real credentials to version control
+> - Run `node seeders/adminSeeder.js` to create admin account
+> - Run `node seeders/testUserSeeder.js` to create test accounts
 
 ## 🔐 Environment Variables
 
@@ -275,9 +273,10 @@ node seeders/adminSeeder.js
 NODE_ENV=development
 PORT=5000
 
-# MongoDB
-MONGODB_URI=mongodb://localhost:27017/business-incubator
-# For Atlas: mongodb+srv://username:password@cluster.mongodb.net/business-incubator
+# MongoDB Atlas Connection
+MONGODB_URI=mongodb+srv://mdsharique23_db_user:<db_password>@databasetest.p1t2jwc.mongodb.net/business-incubator?retryWrites=true&w=majority&appName=DataBaseTest
+# Replace <db_password> with your actual MongoDB Atlas password
+# For local: mongodb://localhost:27017/business-incubator
 
 # JWT
 JWT_SECRET=your_super_secret_jwt_key_change_in_production

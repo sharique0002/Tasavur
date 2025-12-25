@@ -54,8 +54,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Don't retry on logout, refresh, or login endpoints
+    const skipRetryUrls = ['/auth/logout', '/auth/refresh', '/auth/login'];
+    const shouldSkipRetry = skipRetryUrls.some(url => originalRequest.url?.includes(url));
+
     // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !shouldSkipRetry) {
       if (isRefreshing) {
         // Queue failed requests while refreshing
         return new Promise((resolve, reject) => {

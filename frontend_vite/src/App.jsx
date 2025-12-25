@@ -4,6 +4,11 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import React from 'react';
 import Onboard from './pages/Onboard';
 import Dashboard from './pages/Dashboard';
+import RoleDashboard from './pages/RoleDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import FounderDashboard from './pages/FounderDashboard';
+import MentorDashboard from './pages/MentorDashboard';
+import InvestorDashboard from './pages/InvestorDashboard';
 import MentorRequest from './pages/MentorRequest';
 import MyRequests from './pages/MyRequests';
 import ResourceHub from './pages/ResourceHub';
@@ -161,6 +166,14 @@ function App() {
           <Route path="/onboard" element={<Onboard />} />
           <Route
             path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <RoleDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/startups"
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -418,9 +431,7 @@ const Home = () => {
           </div>
 
           <h1 className="hero-title animate-fade-in-up animation-delay-100">
-            <span className="text-white">Accelerate</span>
-            <br />
-            <span className="gradient-text-warm">Your Vision</span>
+            <span className="gradient-text-warm">Where Every Idea Has a Future</span>
           </h1>
 
           <p className="hero-subtitle mx-auto mt-8 animate-fade-in-up animation-delay-200">
