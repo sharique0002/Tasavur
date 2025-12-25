@@ -199,6 +199,30 @@ app.use('/api/mentorship', require('./routes/mentorship'));
 app.use('/api/resources', require('./routes/resource'));
 app.use('/api/funding', require('./routes/funding'));
 
+// Root route - serve frontend
+app.get('/', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    const path = require('path');
+    res.sendFile(path.join(__dirname, '../frontend_vite/dist/index.html'));
+  } else {
+    res.json({
+      success: true,
+      message: 'Tasavur Business Incubator API',
+      version: '1.0.0',
+      endpoints: {
+        health: '/health',
+        api: '/api/health',
+        auth: '/api/auth',
+        startups: '/api/startups',
+        dashboard: '/api/dashboard',
+        mentorship: '/api/mentorship',
+        resources: '/api/resources',
+        funding: '/api/funding'
+      }
+    });
+  }
+});
+
 // Serve frontend index.html for all non-API routes (SPA support)
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
