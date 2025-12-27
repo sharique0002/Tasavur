@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  ChartBarIcon, 
-  UserGroupIcon, 
+import {
+  ChartBarIcon,
+  UserGroupIcon,
   RocketLaunchIcon,
   CurrencyDollarIcon,
   CheckCircleIcon,
@@ -41,7 +41,7 @@ const AdminDashboard = () => {
       setLoading(true);
       const response = await startupAPI.getAll({ page: 1, limit: 5 });
       setRecentStartups(response.data.data);
-      
+
       // Calculate stats
       setStats({
         totalStartups: response.data.pagination?.total || 0,
@@ -130,7 +130,7 @@ const AdminDashboard = () => {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Link
-            to="/dashboard"
+            to="/admin/startups"
             className="glass-card p-6 hover:scale-105 transition-transform duration-300 cursor-pointer group"
           >
             <RocketLaunchIcon className="w-10 h-10 text-accent-orange mb-4 group-hover:scale-110 transition-transform" />
@@ -179,11 +179,10 @@ const AdminDashboard = () => {
                     <p className="text-white/60 text-sm">{startup.shortDesc}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      startup.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
-                      startup.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-red-500/20 text-red-400'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${startup.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
+                        startup.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-red-500/20 text-red-400'
+                      }`}>
                       {startup.status}
                     </span>
                     <span className="text-white/60 text-sm">{startup.domain}</span>

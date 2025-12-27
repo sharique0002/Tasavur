@@ -20,6 +20,8 @@ import StartupDetails from './pages/StartupDetails';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
+import AdminMentorship from './pages/AdminMentorship';
+import AdminStartups from './pages/AdminStartups';
 import useAuthStore from './store/authStore';
 import tasavurLogo from './assets/logo.jpg';
 
@@ -240,10 +242,26 @@ function App() {
           />
           <Route path="/startups/:id" element={<StartupDetails />} />
           <Route
+            path="/mentorship"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminMentorship />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/*"
             element={
               <ProtectedRoute roles={['admin']}>
                 <PlaceholderPage title="Admin Panel" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/startups"
+            element={
+              <ProtectedRoute roles={['admin']}>
+                <AdminStartups />
               </ProtectedRoute>
             }
           />
