@@ -5,7 +5,6 @@ import React from 'react';
 import Onboard from './pages/Onboard';
 import Dashboard from './pages/Dashboard';
 import RoleDashboard from './pages/RoleDashboard';
-import AdminDashboard from './pages/AdminDashboard';
 import FounderDashboard from './pages/FounderDashboard';
 import MentorDashboard from './pages/MentorDashboard';
 import InvestorDashboard from './pages/InvestorDashboard';

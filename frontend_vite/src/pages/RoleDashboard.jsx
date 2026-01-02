@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
-import AdminDashboard from './AdminDashboard';
+import AdminStartups from './AdminStartups';
 import FounderDashboard from './FounderDashboard';
 import MentorDashboard from './MentorDashboard';
 import InvestorDashboard from './InvestorDashboard';
@@ -31,7 +31,7 @@ const RoleDashboard = () => {
   // Route to role-specific dashboard
   switch (user.role) {
     case 'admin':
-      return <AdminDashboard />;
+      return <AdminStartups />;
     case 'founder':
       return <FounderDashboard />;
     case 'mentor':

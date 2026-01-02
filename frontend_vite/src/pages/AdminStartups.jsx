@@ -1,32 +1,29 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
     RocketLaunchIcon,
     ClockIcon,
     CheckCircleIcon,
-    XCircleIcon,
     MagnifyingGlassIcon,
-    FunnelIcon,
     EyeIcon,
     ChartBarIcon,
     UserGroupIcon,
     CurrencyDollarIcon,
-    ExclamationTriangleIcon
+    ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { startupAPI, handleAPIError } from '../services/api';
 import useAuthStore from '../store/authStore';
-import DashboardNav from '../components/DashboardNav';
+import tasavurLogo from '../assets/logo.jpg';
+import RocketLoader from '../components/RocketLoader';
 
 /**
- * Admin Startups Management Page
- * Full management panel for viewing and managing all startups
+ * Admin Startups Management - Clean Light Theme
  */
 const AdminStartups = () => {
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const { user, logout } = useAuthStore();
 
-    // State
     const [loading, setLoading] = useState(true);
     const [startups, setStartups] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +38,6 @@ const AdminStartups = () => {
         total: 0,
         pending: 0,
         approved: 0,
-        rejected: 0,
         active: 0
     });
 
@@ -58,26 +54,15 @@ const AdminStartups = () => {
         try {
             setLoading(true);
 
-            const params = {
-                page: currentPage,
-                limit: 12,
-            };
-
-            if (statusFilter !== 'all') {
-                params.status = statusFilter;
-            }
-
-            if (domainFilter !== 'all') {
-                params.domain = domainFilter;
-            }
+            const params = { page: currentPage, limit: 12 };
+            if (statusFilter !== 'all') params.status = statusFilter;
+            if (domainFilter !== 'all') params.domain = domainFilter;
 
             const response = await startupAPI.getAll(params);
-            const startupsData = response.data.data || [];
-
-            setStartups(startupsData);
+            setStartups(response.data.data || []);
             setTotalPages(response.data.totalPages || 1);
 
-            // Fetch stats by making separate calls for each status (with small limit just for count)
+            // Fetch stats
             const [pendingRes, approvedRes, activeRes, rejectedRes] = await Promise.all([
                 startupAPI.getAll({ status: 'Pending', limit: 1 }),
                 startupAPI.getAll({ status: 'Approved', limit: 1 }),
@@ -85,18 +70,14 @@ const AdminStartups = () => {
                 startupAPI.getAll({ status: 'Rejected', limit: 1 })
             ]);
 
-            // Use pagination.total or count from each response
-            const getPaginationTotal = (res) => res.data.pagination?.total || res.data.count || 0;
+            const getTotal = (res) => res.data.pagination?.total || res.data.count || 0;
 
             setStats({
-                total: getPaginationTotal(pendingRes) + getPaginationTotal(approvedRes) +
-                    getPaginationTotal(activeRes) + getPaginationTotal(rejectedRes),
-                pending: getPaginationTotal(pendingRes),
-                approved: getPaginationTotal(approvedRes),
-                active: getPaginationTotal(activeRes),
-                rejected: getPaginationTotal(rejectedRes)
+                total: getTotal(pendingRes) + getTotal(approvedRes) + getTotal(activeRes) + getTotal(rejectedRes),
+                pending: getTotal(pendingRes),
+                approved: getTotal(approvedRes),
+                active: getTotal(activeRes)
             });
-
         } catch (error) {
             toast.error(handleAPIError(error));
         } finally {
@@ -104,15 +85,13 @@ const AdminStartups = () => {
         }
     };
 
-    // Filter startups based on search
     const filteredStartups = startups.filter(startup => {
         if (!searchQuery) return true;
         const search = searchQuery.toLowerCase();
         return (
             startup.name?.toLowerCase().includes(search) ||
             startup.shortDesc?.toLowerCase().includes(search) ||
-            startup.domain?.toLowerCase().includes(search) ||
-            startup.founder?.name?.toLowerCase().includes(search)
+            startup.domain?.toLowerCase().includes(search)
         );
     });
 
@@ -129,367 +108,222 @@ const AdminStartups = () => {
         }
     };
 
-    const handleBulkAction = async (action) => {
-        if (selectedStartups.length === 0) {
-            toast.error('Please select startups first');
-            return;
-        }
-
-        try {
-            setActionLoading(true);
-
-            const statusMap = {
-                approve: 'Approved',
-                reject: 'Rejected',
-                activate: 'Active'
-            };
-
-            await Promise.all(
-                selectedStartups.map(id =>
-                    startupAPI.updateStatus(id, { status: statusMap[action] })
-                )
-            );
-
-            toast.success(`${selectedStartups.length} startups updated successfully`);
-            setSelectedStartups([]);
-            fetchStartups();
-        } catch (error) {
-            toast.error(handleAPIError(error));
-        } finally {
-            setActionLoading(false);
-        }
-    };
-
-    const toggleSelectStartup = (id) => {
-        setSelectedStartups(prev =>
-            prev.includes(id)
-                ? prev.filter(s => s !== id)
-                : [...prev, id]
-        );
-    };
-
-    const selectAll = () => {
-        if (selectedStartups.length === filteredStartups.length) {
-            setSelectedStartups([]);
-        } else {
-            setSelectedStartups(filteredStartups.map(s => s._id));
-        }
-    };
-
     const getStatusBadge = (status) => {
         const styles = {
-            'Pending': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-            'Approved': 'bg-green-500/20 text-green-400 border-green-500/30',
-            'Active': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-            'Rejected': 'bg-red-500/20 text-red-400 border-red-500/30'
+            'Pending': 'admin-badge-warning',
+            'Approved': 'admin-badge-info',
+            'Active': 'admin-badge-success',
+            'Rejected': 'admin-badge-error'
         };
-        return styles[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    };
-
-    const getStageBadge = (stage) => {
-        const styles = {
-            'Idea': 'text-purple-400',
-            'MVP': 'text-blue-400',
-            'Growth': 'text-green-400',
-            'Scale': 'text-orange-400'
-        };
-        return styles[stage] || 'text-gray-400';
+        return styles[status] || 'admin-badge-default';
     };
 
     const statCards = [
-        {
-            title: 'Total Startups',
-            value: stats.total,
-            icon: RocketLaunchIcon,
-            color: 'from-purple-500 to-purple-600'
-        },
-        {
-            title: 'Pending Review',
-            value: stats.pending,
-            icon: ClockIcon,
-            color: 'from-yellow-500 to-orange-500'
-        },
-        {
-            title: 'Approved',
-            value: stats.approved,
-            icon: CheckCircleIcon,
-            color: 'from-green-500 to-emerald-500'
-        },
-        {
-            title: 'Active',
-            value: stats.active,
-            icon: ChartBarIcon,
-            color: 'from-blue-500 to-cyan-500'
-        }
+        { title: 'Total Startups', value: stats.total, icon: RocketLaunchIcon },
+        { title: 'Pending Review', value: stats.pending, icon: ClockIcon },
+        { title: 'Approved', value: stats.approved, icon: CheckCircleIcon },
+        { title: 'Active', value: stats.active, icon: ChartBarIcon }
     ];
 
     if (loading && startups.length === 0) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
-                <div className="spinner"></div>
+            <div className="admin-page flex items-center justify-center">
+                <RocketLoader text="LOADING" />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a]">
-            <DashboardNav />
-            <div className="container mx-auto px-4 pt-24 pb-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2 font-display">
-                        Manage Startups
-                    </h1>
-                    <p className="text-white/60">
-                        View, approve, and manage all startups in the platform
-                    </p>
-                </div>
+        <div className="admin-page">
+            {/* Floating Orbs Background */}
+            <div className="admin-floating-orbs">
+                <div className="admin-orb admin-orb-1"></div>
+                <div className="admin-orb admin-orb-2"></div>
+                <div className="admin-orb admin-orb-3"></div>
+            </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {statCards.map((stat, index) => (
-                        <div
-                            key={index}
-                            className="glass-card p-6 hover:scale-105 transition-transform duration-300"
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <div className={`p-3 bg-gradient-to-r ${stat.color} rounded-xl`}>
-                                    <stat.icon className="w-6 h-6 text-white" />
+            {/* Content Wrapper */}
+            <div className="admin-content">
+                {/* Navigation */}
+                <nav className="admin-nav">
+                    <div className="max-w-7xl mx-auto px-6 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                                <Link to="/" className="flex items-center gap-3">
+                                    <img src={tasavurLogo} alt="Tasavur" className="w-10 h-10 rounded-full object-cover" />
+                                    <span className="text-xl font-bold text-black">Tasavur</span>
+                                </Link>
+                                <div className="hidden md:flex items-center gap-6">
+                                    <Link to="/dashboard" className="admin-nav-link">Dashboard</Link>
+                                    <Link to="/admin/startups" className="admin-nav-link active">Manage Startups</Link>
+                                    <Link to="/mentorship" className="admin-nav-link">Mentorship</Link>
                                 </div>
                             </div>
-                            <h3 className="text-white/60 text-sm mb-1">{stat.title}</h3>
-                            <p className="text-3xl font-bold text-white">{stat.value}</p>
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm text-gray-600">{user?.name}</span>
+                                <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">admin</span>
+                                <button onClick={logout} className="admin-btn admin-btn-secondary">Logout</button>
+                            </div>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                </nav>
 
-                {/* Filters and Search */}
-                <div className="glass-card p-6 mb-6">
-                    <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
-                        {/* Search */}
-                        <div className="relative flex-1 max-w-md">
-                            <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-                            <input
-                                type="text"
-                                placeholder="Search startups by name, description, or founder..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-accent-orange/50 transition-colors"
-                            />
-                        </div>
-
-                        {/* Filters */}
-                        <div className="flex flex-wrap gap-3 items-center">
-                            <FunnelIcon className="w-5 h-5 text-white/40" />
-
-                            {/* Status Filter */}
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => {
-                                    setStatusFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent-orange/50"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Active">Active</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-
-                            {/* Domain Filter */}
-                            <select
-                                value={domainFilter}
-                                onChange={(e) => {
-                                    setDomainFilter(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-accent-orange/50"
-                            >
-                                <option value="all">All Domains</option>
-                                {domains.map(domain => (
-                                    <option key={domain} value={domain}>{domain}</option>
-                                ))}
-                            </select>
-                        </div>
+                {/* Header */}
+                <div className="border-b border-gray-100">
+                    <div className="max-w-7xl mx-auto px-6 py-8">
+                        <Link to="/dashboard" className="inline-flex items-center text-gray-500 hover:text-black mb-4 text-sm">
+                            <ArrowLeftIcon className="w-4 h-4 mr-1" />
+                            Back to Dashboard
+                        </Link>
+                        <h1 className="admin-title">Manage Startups</h1>
+                        <p className="admin-subtitle">View, approve, and manage all startups in the platform</p>
                     </div>
                 </div>
 
-                {/* Bulk Actions */}
-                {selectedStartups.length > 0 && (
-                    <div className="glass-card p-4 mb-6 flex items-center justify-between animate-fade-in">
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={selectAll}
-                                className="text-accent-orange hover:text-orange-400 text-sm font-medium"
-                            >
-                                {selectedStartups.length === filteredStartups.length ? 'Deselect All' : 'Select All'}
-                            </button>
-                            <span className="text-white/60">
-                                {selectedStartups.length} startup{selectedStartups.length !== 1 ? 's' : ''} selected
-                            </span>
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleBulkAction('approve')}
-                                disabled={actionLoading}
-                                className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
-                            >
-                                ✓ Approve
-                            </button>
-                            <button
-                                onClick={() => handleBulkAction('activate')}
-                                disabled={actionLoading}
-                                className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors disabled:opacity-50"
-                            >
-                                🚀 Activate
-                            </button>
-                            <button
-                                onClick={() => handleBulkAction('reject')}
-                                disabled={actionLoading}
-                                className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                            >
-                                ✗ Reject
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Startups List */}
-                <div className="glass-card p-6">
-                    <div className="space-y-4">
-                        {filteredStartups.map((startup) => (
-                            <div
-                                key={startup._id}
-                                className={`bg-white/5 rounded-xl p-5 hover:bg-white/10 transition-colors ${selectedStartups.includes(startup._id) ? 'ring-2 ring-accent-orange' : ''
-                                    }`}
-                            >
-                                <div className="flex items-start gap-4">
-                                    {/* Checkbox */}
-                                    <div className="pt-1">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedStartups.includes(startup._id)}
-                                            onChange={() => toggleSelectStartup(startup._id)}
-                                            className="w-5 h-5 rounded bg-white/10 border-white/20 text-accent-orange focus:ring-accent-orange/50"
-                                        />
-                                    </div>
-
-                                    {/* Logo/Avatar */}
-                                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-accent-orange to-accent-purple flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
-                                        {startup.name?.charAt(0) || 'S'}
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between gap-4 mb-2">
-                                            <div>
-                                                <h3 className="text-white font-bold text-lg">{startup.name}</h3>
-                                                <p className="text-white/50 text-sm line-clamp-1">{startup.shortDesc}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(startup.status)}`}>
-                                                    {startup.status}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-wrap items-center gap-4 text-sm text-white/50 mb-3">
-                                            <span className="flex items-center gap-1">
-                                                <RocketLaunchIcon className="w-4 h-4" />
-                                                {startup.domain}
-                                            </span>
-                                            <span className={`font-medium ${getStageBadge(startup.stage)}`}>
-                                                {startup.stage}
-                                            </span>
-                                            {startup.founder && (
-                                                <span className="flex items-center gap-1">
-                                                    <UserGroupIcon className="w-4 h-4" />
-                                                    {startup.founder.name || 'Unknown'}
-                                                </span>
-                                            )}
-                                            {startup.kpis?.funding && (
-                                                <span className="flex items-center gap-1">
-                                                    <CurrencyDollarIcon className="w-4 h-4" />
-                                                    ${(startup.kpis.funding / 1000).toFixed(0)}k raised
-                                                </span>
-                                            )}
-                                            <span>
-                                                {new Date(startup.createdAt).toLocaleDateString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric'
-                                                })}
-                                            </span>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => navigate(`/startups/${startup._id}`)}
-                                                className="px-3 py-1.5 bg-white/5 text-white/70 rounded-lg hover:bg-white/10 hover:text-white transition-colors text-sm flex items-center gap-1"
-                                            >
-                                                <EyeIcon className="w-4 h-4" />
-                                                View Details
-                                            </button>
-
-                                            {startup.status === 'Pending' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(startup._id, 'Approved')}
-                                                        disabled={actionLoading}
-                                                        className="px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors text-sm disabled:opacity-50"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(startup._id, 'Rejected')}
-                                                        disabled={actionLoading}
-                                                        className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors text-sm disabled:opacity-50"
-                                                    >
-                                                        Reject
-                                                    </button>
-                                                </>
-                                            )}
-
-                                            {startup.status === 'Approved' && (
-                                                <button
-                                                    onClick={() => handleStatusUpdate(startup._id, 'Active')}
-                                                    disabled={actionLoading}
-                                                    className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm disabled:opacity-50"
-                                                >
-                                                    Activate
-                                                </button>
-                                            )}
-                                        </div>
+                {/* Content */}
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 admin-stagger">
+                        {statCards.map((stat, index) => (
+                            <div key={index} className="admin-stat-card">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                                        <stat.icon className="w-5 h-5 text-purple-600" />
                                     </div>
                                 </div>
+                                <p className="text-sm text-gray-500">{stat.title}</p>
+                                <p className="text-3xl font-bold text-black admin-stat-value">{stat.value}</p>
                             </div>
                         ))}
+                    </div>
 
-                        {filteredStartups.length === 0 && !loading && (
-                            <div className="text-center py-12 text-white/40">
-                                <RocketLaunchIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                <p className="text-lg">
-                                    {searchQuery || statusFilter !== 'all' || domainFilter !== 'all'
-                                        ? 'No startups match your filters'
-                                        : 'No startups registered yet'}
-                                </p>
-                                {(searchQuery || statusFilter !== 'all' || domainFilter !== 'all') && (
-                                    <button
-                                        onClick={() => {
-                                            setSearchQuery('');
-                                            setStatusFilter('all');
-                                            setDomainFilter('all');
-                                        }}
-                                        className="mt-4 text-accent-orange hover:text-orange-400"
-                                    >
-                                        Clear filters
-                                    </button>
-                                )}
+                    {/* Filters */}
+                    <div className="admin-card mb-6">
+                        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                            <div className="relative flex-1 max-w-md">
+                                <MagnifyingGlassIcon className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search startups..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="admin-input pl-12"
+                                />
                             </div>
-                        )}
+                            <div className="flex gap-3">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                                    className="admin-select"
+                                >
+                                    <option value="all">All Status</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Rejected">Rejected</option>
+                                </select>
+                                <select
+                                    value={domainFilter}
+                                    onChange={(e) => { setDomainFilter(e.target.value); setCurrentPage(1); }}
+                                    className="admin-select"
+                                >
+                                    <option value="all">All Domains</option>
+                                    {domains.map(d => <option key={d} value={d}>{d}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Startups List */}
+                    <div className="admin-section">
+                        <div className="admin-section-content p-0">
+                            {filteredStartups.length > 0 ? (
+                                <div className="divide-y divide-gray-100">
+                                    {filteredStartups.map((startup) => (
+                                        <div key={startup._id} className="px-6 py-5 admin-list-item">
+                                            <div className="flex items-start gap-4">
+                                                <div className="admin-avatar admin-avatar-lg bg-gray-100">
+                                                    {startup.name?.charAt(0) || 'S'}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3 mb-1">
+                                                        <h3 className="font-semibold text-black text-lg">{startup.name}</h3>
+                                                        <span className={`admin-badge ${getStatusBadge(startup.status)}`}>
+                                                            {startup.status}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-500 text-sm mb-3 line-clamp-1">{startup.shortDesc}</p>
+                                                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                                                        <span className="flex items-center gap-1">
+                                                            <RocketLaunchIcon className="w-4 h-4" />
+                                                            {startup.domain}
+                                                        </span>
+                                                        <span>{startup.stage}</span>
+                                                        {startup.founder && (
+                                                            <span className="flex items-center gap-1">
+                                                                <UserGroupIcon className="w-4 h-4" />
+                                                                {startup.founder.name}
+                                                            </span>
+                                                        )}
+                                                        <span>
+                                                            {new Date(startup.createdAt).toLocaleDateString('en-US', {
+                                                                month: 'short', day: 'numeric', year: 'numeric'
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => navigate(`/startups/${startup._id}`)}
+                                                        className="admin-btn admin-btn-ghost"
+                                                    >
+                                                        <EyeIcon className="w-4 h-4 mr-1 inline" />
+                                                        View
+                                                    </button>
+                                                    {startup.status === 'Pending' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleStatusUpdate(startup._id, 'Approved')}
+                                                                disabled={actionLoading}
+                                                                className="admin-btn admin-btn-success"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleStatusUpdate(startup._id, 'Rejected')}
+                                                                disabled={actionLoading}
+                                                                className="admin-btn admin-btn-danger"
+                                                            >
+                                                                Reject
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {startup.status === 'Approved' && (
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(startup._id, 'Active')}
+                                                            disabled={actionLoading}
+                                                            className="admin-btn admin-btn-primary"
+                                                        >
+                                                            Activate
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="admin-empty-state">
+                                    <RocketLaunchIcon className="admin-empty-state-icon" />
+                                    <p className="admin-empty-state-title">No startups found</p>
+                                    <p className="admin-empty-state-text">
+                                        {searchQuery || statusFilter !== 'all' || domainFilter !== 'all'
+                                            ? 'Try adjusting your filters'
+                                            : 'No startups registered yet'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Pagination */}
@@ -498,23 +332,22 @@ const AdminStartups = () => {
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
-                                className="px-4 py-2 bg-white/5 text-white/60 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="admin-btn admin-btn-secondary disabled:opacity-50"
                             >
                                 Previous
                             </button>
-                            <span className="text-white/60 px-4">
-                                Page {currentPage} of {totalPages}
-                            </span>
+                            <span className="text-gray-500 px-4">Page {currentPage} of {totalPages}</span>
                             <button
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-4 py-2 bg-white/5 text-white/60 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                                className="admin-btn admin-btn-secondary disabled:opacity-50"
                             >
                                 Next
                             </button>
                         </div>
                     )}
                 </div>
+                {/* End admin-content */}
             </div>
         </div>
     );
